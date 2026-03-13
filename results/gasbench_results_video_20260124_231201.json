@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "run_id": "45c0b402-a365-4417-b03d-643923936df5",
+    "timestamp": 1769292720.1750047,
+    "datetime": "2026-01-24T23:12:00.175005",
+    "model_path": "/root/bittensor/bitmind-subnet/onnx_exports/convnext.onnx",
+    "modality": "video",
+    "mode": "debug",
+    "gasstation_only": false,
+    "benchmark_completed": true,
+    "duration_seconds": 1.6898682117462158
+  },
+  "overall_score": 0.0,
+  "validation": {
+    "model_path": "/root/bittensor/bitmind-subnet/onnx_exports/convnext.onnx",
+    "input_shape": "['batch_size', 16, 3, 224, 224]",
+    "input_type": "tensor(uint8)",
+    "output_shape": "['batch_size', 2]"
+  },
+  "errors": [],
+  "results": {
+    "total_samples": 0,
+    "correct_predictions": 0,
+    "accuracy": 0.0,
+    "avg_inference_time_ms": 0.0,
+    "p95_inference_time_ms": 0.0,
+    "binary_mcc": 0.0,
+    "binary_cross_entropy": 0.0,
+    "sn34_score": 0.0
+  },
+  "dataset_info": {
+    "datasets_used": [
+      "gasstation-generated-videos"
+    ],
+    "evaluation_type": "synthetic_detection",
+    "dataset_media_types": {
+      "gasstation-generated-videos": "synthetic"
+    },
+    "samples_per_dataset": {
+      "gasstation-generated-videos": 500
+    }
+  }
+}

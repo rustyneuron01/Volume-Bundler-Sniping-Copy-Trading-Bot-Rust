@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "run_id": "0da83a55-2f47-4d51-b43e-d87b0386e1ae",
+    "timestamp": 1768572994.7820294,
+    "datetime": "2026-01-16T15:16:34.782029",
+    "model_path": "/root/bittensor/bitmind-subnet/training/gasbench-training/output/onnx/convnextv2_video_detector_calibrated.onnx",
+    "modality": "video",
+    "mode": "small",
+    "gasstation_only": false,
+    "benchmark_completed": false,
+    "duration_seconds": 0.010108232498168945
+  },
+  "overall_score": 0.0,
+  "validation": {},
+  "errors": [
+    "ONNX runtime error: [ONNXRuntimeError] : 7 : INVALID_PROTOBUF : Load model from /root/bittensor/bitmind-subnet/training/gasbench-training/output/onnx/convnextv2_video_detector_calibrated.onnx failed:Protobuf parsing failed."
+  ]
+}

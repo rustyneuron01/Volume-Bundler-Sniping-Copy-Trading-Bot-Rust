@@ -1,0 +1,17 @@
+name: "clip-vitl14-demamba-video-detector"
+version: "1.0.0"
+modality: "video"
+
+model:
+  num_classes: 2
+  backbone: clip_vitl14
+  weights_file: "model.safetensors"
+  mamba_dim: 512
+  fusing_ratios: 2
+  use_tta: false
+  dtype: bf16
+
+preprocessing:
+  resize: [224, 224]
+  num_frames: 8
+  frame_rate: 8.0

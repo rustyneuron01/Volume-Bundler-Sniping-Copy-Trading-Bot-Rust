@@ -1,0 +1,52 @@
+# Run with: docker compose --env-file .env.validator up -d
+# Three containers (validator, generator, data), one process each.
+# Cache, wallet, and validator state/logging are bind-mounted (set in .env.validator). State lives under BT_LOGGING_LOGGING_DIR/wallet/hotkey/.
+# Validator uses network_mode: host so its FastAPI callback is on the host port miners are told to hit.
+services:
+  validator:
+    build: .
+    image: bitmind-subnet-validator:latest
+    env_file: .env.validator
+    environment:
+      - SERVICE=validator
+    network_mode: host
+    volumes:
+      - ${SN34_CACHE_DIR:-~/.cache/sn34}:/root/.cache/sn34
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${WALLET_PATH:-~/.bittensor/wallets}/${WALLET_NAME:-default}:/root/.bittensor/wallets/${WALLET_NAME:-default}
+      # Validator state (scores, challenge tasks) and logs: bittensor full_path = logging_dir/wallet/hotkey/netuid/neuron_name
+      - ${BT_LOGGING_LOGGING_DIR:-~/.bittensor}/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}:/root/.bittensor/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}
+    restart: unless-stopped
+
+  generator:
+    image: bitmind-subnet-validator:latest
+    env_file: .env.validator
+    environment:
+      - SERVICE=generator
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ${SN34_CACHE_DIR:-~/.cache/sn34}:/root/.cache/sn34
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${WALLET_PATH:-~/.bittensor/wallets}/${WALLET_NAME:-default}:/root/.bittensor/wallets/${WALLET_NAME:-default}
+      - ${BT_LOGGING_LOGGING_DIR:-~/.bittensor}/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}:/root/.bittensor/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    shm_size: '16gb'
+
+  data:
+    image: bitmind-subnet-validator:latest
+    env_file: .env.validator
+    environment:
+      - SERVICE=data
+    volumes:
+      - ${SN34_CACHE_DIR:-~/.cache/sn34}:/root/.cache/sn34
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${WALLET_PATH:-~/.bittensor/wallets}/${WALLET_NAME:-default}:/root/.bittensor/wallets/${WALLET_NAME:-default}
+      - ${BT_LOGGING_LOGGING_DIR:-~/.bittensor}/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}:/root/.bittensor/${WALLET_NAME:-default}/${WALLET_HOTKEY:-default}
+    restart: unless-stopped

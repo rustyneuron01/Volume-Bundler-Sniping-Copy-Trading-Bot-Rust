@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Node.js (not used - Python only project)
+node_modules/
+package.json
+package-lock.json
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.coverage
+*.ipynb
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Model files and cache
+*.pth
+*.pt
+*.ckpt
+.cache/
+
+# Bittensor specific
+~/.bittensor/
+*.wallet 
+
+.env.validator
+.env.miner
+.env.generator
+.env.mock_miner
+
+*.onnx
+downloaded_models/*
+
+.env.gen_miner
+base_miner/test_output/*
+base_miner/.env.gen_miner
+*.onnx
+downloaded_models/*
+
+generated_content/*
+
+wandb/*
+
+sample-images/ 

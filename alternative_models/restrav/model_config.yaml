@@ -1,0 +1,16 @@
+name: "restrav-vits14-video-detector"
+version: "1.0.0"
+modality: "video"
+
+model:
+  num_classes: 2
+  backbone: dinov2_vits14
+  weights_file: "model.safetensors"
+  mlp_h1: 64
+  mlp_h2: 32
+  dtype: bf16
+
+preprocessing:
+  resize: [224, 224]
+  num_frames: 24
+  frame_rate: 8.0

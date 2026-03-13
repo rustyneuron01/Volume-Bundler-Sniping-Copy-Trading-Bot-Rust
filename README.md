@@ -1,130 +1,143 @@
-# 🤖 Bot Service Library — Advanced Crypto Trading Bots & Tools
+<div align="center">
+  <img src="docs/static/bm-logo-black.png" alt="BitMind Logo" width="120"/>
+  
+  <h1>GAS<br><small>Generative Adversarial Subnet</small></h1>
+  <h3><code>Bittensor SN34</code></h3>
+  <p>
+    <a href="docs/Mining.md">⛏️ Mining</a> ·
+    <a href="docs/Validating.md">🛡️ Validating</a> ·
+    <a href="docs/Incentive.md">💰 Incentives</a> ·
+    <a href="https://app.bitmind.ai/">🏆 Leaderboard</a>
+  </p>
+  <p>
+    🤗 <a href="https://huggingface.co/gasstation">GAS-Station</a> ·
+    <a href="https://www.bitmind.ai/apps">🌐 Apps</a>
+  </p>
+</div>
 
-A modular, scalable bot service framework for building high-performance trading tools on the **Solana** and **EVM** and **Avalanche** ecosystems.
-Supports platforms including **Raydium**, **Pump.fun**, **Meteora**, and more—ideal for DeFi developers looking to automate strategies like **volume monitoring**, **sniping**, **copy trading**, **wallet tracking**, and **multi-wallet bundling**.
+## About GAS
+<div align="center">
+<em>Fake content is evolving fast. Staying ahead demands relentless innovation.</em><br><br>
+</div>
 
----
+**GAS (Generative Adversarial Subnet)** is a Bittensor subnet inspired by Generative Adversarial Networks (GANs). Detectors and generators compete in a dynamic loop: detectors sharpen their ability to spot synthetic media, while generators push to create more convincing fakes. This adversarial process drives cutting-edge detection tools and continuously generates the training data needed to sustain progress.
 
-## 🎥 Demo Videos
+Unlike static AI safety solutions, GAS thrives on open, incentivized competition, ensuring detectors evolve as fast as the threats they face.
 
-- 📊 [Volume Bot](https://www.youtube.com/watch?v=7lVfFEN30M8)
-- 🧺 [Bundler Bot](https://www.youtube.com/watch?v=XkJ6IOPr0lI)
-- 🎯 [Sniper Bot](https://www.youtube.com/watch?v=D8XfP-WamiA)
-- 🔁 [Copy Trading Bot](https://www.youtube.com/watch?v=0PQmbM_v0ug)
 
----
+## Competition Overview
 
-## ⚙️ Key Features
+GAS runs two parallel competition tracks on Bittensor Subnet 34:
 
-- ✅ **Modular Bot Architecture** – Easily extend with new strategies and services
-- 🌉 **Cross-Chain Support** – Works with both **Solana** and **EVM**-based networks
-- 📡 **gRPC + WebSocket Integration** – Real-time trading data for sub-second execution
-- 🔧 **Customizable Services** – Add wallets, handlers, and endpoints as needed
-- 🧪 **Battle-Tested on Mainnet** – Already deployed on **Raydium**, **Pump.fun**, and **Meteora**
+| Track | What You Do | How You're Scored |
+|-------|-------------|-------------------|
+| **Discriminative Mining** | Submit AI-generated content detection models (image, video, audio) | `sn34_score` -- geometric mean of MCC and Brier score, measuring both accuracy and calibration |
+| **Generative Mining** | Run a server that generates synthetic media on demand | Base reward for valid content × multiplier for fooling discriminators |
 
----
+**Key facts:**
+- **Three modalities**: Image, video, and audio detection are all scored independently
+- **Cloud-evaluated**: Discriminator models are benchmarked on cloud infrastructure -- no GPU hosting required
+- **Model format**: Safetensors only (ONNX is deprecated)
+- **Datasets refresh weekly** with fresh GAS-Station data alongside static benchmarks
+- **One model per modality per hotkey** for discriminative miners
 
-## 🛠️ Supported Bots & Tools
+See [Incentive Mechanism](docs/Incentive.md) for full scoring details.
 
-| **Category**         | **Bot Name**                     | **Description**                     | **Features**                                     |
-| -------------------- | -------------------------------- | ----------------------------------- | ------------------------------------------------ |
-| **Volume Bots**      | Avalanche Volume Bot             | Ethereum trading volume detection   | OpenZeppelin SDK                                 |
-|                      | Ethereum Multi-Wallet Volume Bot | Monitor multiple Ethereum wallets   | Bitquery + Web3.py                               |
-|                      | Raydium Volume Bot               | Fast Jito bundle-based bot          | Jupiter Router                                   |
-|                      | Solana Multidex Volume Bot       | For Raydium, Meteora, Jupiter       | Solana Tracker                                   |
-|                      | Meteora Volume Bot               | Dedicated to Meteora                | Meteora SDK                                      |
-|                      | Pumpfun Volume Bot               | Native bot for Pump.fun             | Pumpfun SDK                                      |
-|                      | Moonshot Volume Bot              | Hype token detection                | Moonshot SDK                                     |
-|                      | Tron Volume Bot                  | For Tron chain                      | Sun Pump API                                     |
-| **Sniper Bots**      | Pumpfun Sniper Bot               | Basic WebSocket sniper              | Free RPC compatible                              |
-|                      | Pumpfun Sniper Bot v1            | Enhanced sniping with Geyser        | Helius Geyser integration                        |
-|                      | Pumpfun Sniper Bot v2            | Block-level sniper with Yellowstone | GRPC-based sniping within \~1 block              |
-|                      | Raydium Sniper Bot               | Log-based Solana sniping            | Raydium SDK + Helius Geyser                      |
-|                      | Raydium Sniper Bot v1            | Jito-confirmed sniper bot           | Yellowstone GRPC + Jito bundling                 |
-| **Bundlers**         | Pumpfun Bundler                  | Multi-wallet bundling support       | Jito-based bundling logic                        |
-|                      | Raydium Bundler                  | Supports up to 27 wallets           | Parallel bundling for Raydium pools              |
-| **Comment Bot**      | Pumpfun Comment Bot              | Auto-comments on Pump.fun           | JSON-driven logic and random wallet injection    |
-| **Launchpad**        | MemeToken Launchpad              | Meme token launcher on Raydium      | Create and deploy tokens with Raydium tooling    |
-| **Utility Tools**    | Token Freezer                    | Freeze specific token accounts      | Uses ATA transaction patterns                    |
-| **Copy Trading**     | Copy Trading Bot                 | Auto mirror trades from wallets     | Built with Jupiter Router and Rust backend       |
-| **Wallet Analytics** | Wallet Tracker                   | Track balances & transactions       | Supports >10,000 wallets with token & price data |
 
----
+## Quick Start
 
-## 📁 Project Structure
+### Installation
 
 ```bash
-Bot-Service-Library/
-├── bundler-bot           # Volume bundler bot for Raydium & Pump.fun (TypeScript)
-├── copy-trading-bot      # Mirror user actions via Jupiter route (Rust)
-├── sniper-bot            # Sniping bots for Solana DEXes (TypeScript)
-├── volume-bot            # Volume bots for Raydium, Meteora, Pump.fun, Moonshot (TypeScript)
-└── wallet-tracking       # Wallet monitoring utilities (TypeScript)
+git clone https://github.com/BitMind-AI/bitmind-subnet.git
+cd bitmind-subnet
+./install.sh
 ```
 
----
+**Options:**
+- `./install.sh --no-system-deps` - Skip system dependency installation (intended for discriminative miners)
 
-## 🚀 Getting Started
-
-### 🔧 Prerequisites
-
-- [Rust (via rustup)](https://rustup.rs/)
-- Node.js and npm
-- Solana CLI and access to RPC/gRPC endpoints (e.g., Helius, Jito)
-
-### 📦 Installation
-
+### Using gascli
 ```bash
-git clone https://github.com/rustyneuron01/Bot-Service-Library.git
-cd Bot-Service-Library
-cargo build
-npm install
+# Activate virtual environment to use gascli
+source .venv/bin/activate
+
+# Show available commands
+gascli --help
+
+# Validators: Start or restart validator services
+gascli validator start
+
+# Miners: Start or restart generative miner
+gascli generator start
+
+# Miners: Push discriminator models (all three modalities at once)
+gascli d push \
+  --image-model image_detector.zip \
+  --video-model video_detector.zip \
+  --audio-model audio_detector.zip \
+  --wallet-name default --wallet-hotkey default
+
+# Or push one model at a time
+gascli d push --image-model image_detector.zip
+gascli d push --video-model video_detector.zip
+gascli d push --audio-model audio_detector.zip
 ```
 
-### ▶️ Run
+**Available Aliases:**
+- `validator` → `vali`, `v`
+- `discriminator` → `d`
+- `generator` → `gen`, `g`
 
+
+### Not using gascli
 ```bash
-cargo run
-npm run dev
+# Validators: Start or restart validator services
+# (Does not require virtualenv activation)
+pm2 start validator.config.js  
+
+# Miners: Start or restart generative miner
+pm2 start gen_miner.config.js
+
+# Miners: Push discriminator models
+source .venv/bin/activate
+python neurons/discriminator/push_model.py \
+  --image-model image_detector.zip \
+  --video-model video_detector.zip \
+  --audio-model audio_detector.zip \
+  --wallet-name default --wallet-hotkey default
 ```
+For detailed installation and usage instructions, see [Installation Guide](docs/Installation.md).
 
----
 
-## 🧠 Technologies Used
+## Core Components
 
-- 🦀 **Rust** — for backend performance & gRPC-based bots
-- 🟨 **TypeScript** — used for rapid prototyping and integration
-- 🔗 **Solana SDKs** — Raydium, Pumpfun, Meteora
-- 📡 **gRPC** — real-time data streams from Helius & Yellowstone
-- 📊 **Web3.py**, **Bitquery** — Ethereum wallet data & EVM bot logic
-- 🧺 **Jito Bundler** — used for Solana bundling strategies
-- ⚙️ **OpenZeppelin SDK** — secure EVM-based smart contract interaction
+> This documentation assumes basic familiarity with [Bittensor concepts](https://docs.bittensor.com/learn/bittensor-building-blocks). 
 
----
+#### Discriminative Miners [[docs](docs/Discriminative-Mining.md)]
+Discriminative miners submit detection models for evaluation against a wide variety of real and synthetic media across **image, video, and audio** modalities. Models are evaluated on cloud infrastructure and rewarded based on their accuracy and calibration. This significantly reduces the capital required to mine compared to previous versions that required GPU hosting, and allows the subnet to more reliably identify unique models and reward novel contributions proportionally to their accuracy.
 
-## 🤝 Contributing
+#### Generative Miners [[docs](docs/Generative-Mining.md)]
 
-We welcome community contributions! You can help by:
+Generative miners generate synthetic images and videos according to prompts from validators, and are rewarded based on their ability to pass validation checks and fool discriminative miners.
 
-- Adding new bots or extending existing logic
-- Improving documentation
-- Sharing new strategies or tools
+#### Validators [[docs](docs/Validating.md)]
+Validators are responsible for challenging and scoring both miner types. Generative miners are sent prompts, and their returned synthetic media are validated to mitigate gaming and incentivize high quality results. Discriminative miners are continually evaluated against a mix of data from generative miners, real world data, and data generated locally on the validator.
 
-### 🔁 Contribution Flow
 
-1. Fork the repository
-2. Create a feature branch
+## Subnet Architecture
+![Subnet Architecture](docs/static/GAS-Architecture-Simple.png)
 
-   ```bash
-   git checkout -b your-feature-name
-   ```
+## Community
 
-3. Commit and push your changes
-4. Submit a pull request with a brief description
+<p align="left">
+  <a href="https://discord.gg/kKQR98CrUn">
+    <img src="docs/static/Join-BitMind-Discord.png" alt="Join us on Discord" width="60%">
+  </a>
+</p> 
 
----
+## Contributing
 
-## 📫 Contact
+Contributions are welcome and can be made via a pull request to the `testnet` branch.
 
-Made by **[@rustyneuron01](https://github.com/rustyneuron01)**
-💬 Twitter: [@rustyneuron_01](https://x.com/rustyneuron_01)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/BitMind-AI/bitmind-subnet)
