@@ -45,11 +45,16 @@ Additional reported metrics: accuracy, cross-entropy, per-dataset breakdowns, in
 
 | Modality | Model / approach | Notes |
 |----------|------------------|--------|
-| **Image** | DINOv3 (ViT backbone) | Patch-level or CLS features + classification head; optional LoRA for better generalization. |
+| **Image** | DINOv3 (ViT backbone) | Patch-level or CLS features + classification head; **LoRA** fine-tuning for better generalization. |
 | **Video** | DINOv2 + temporal head (GenD-style) or ReStraV-style | **GenD-style**: DINOv2 ViT-L, LayerNorm-only tuning, temporal transformer + head. **ReStraV-style**: Frozen DINOv2, trajectory geometry (stepwise distances, curvature) → 21-D vector, small MLP only trained. Both output binary logits. |
 | **Audio** | BreathNet | Audio-specific model for real vs. synthetic speech/audio. |
 
 All models are exported as **safetensors** with a small wrapper (`model_config.yaml`, `model.py`, `*.safetensors`) so the same benchmark loader runs image, video, and audio.
+
+### Training methods
+
+- **LoRA (Low-Rank Adaptation)**: Used for efficient fine-tuning of vision backbones (e.g. DINOv3 for image). Only a small set of adapter parameters is trained, preserving pretrained features while adapting to real-vs.-fake discrimination.
+- **Reinforcement learning**: Applied in the training pipeline to optimize for the combined benchmark metric (MCC + Brier), encouraging both discriminative accuracy and calibrated probability outputs.
 
 ### Data preprocessing
 
