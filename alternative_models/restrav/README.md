@@ -16,7 +16,7 @@ Use the same CSVs and data root as dinov2. Videos can be 518×518; the model res
 From the `restrav` folder, run the setup script, then the training command it prints:
 
 ```bash
-cd /path/to/bitmind-subnet/alternative_models/restrav
+cd alternative_models/restrav
 ./gpu_setup.sh
 ```
 

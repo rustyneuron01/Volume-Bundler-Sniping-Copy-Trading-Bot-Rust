@@ -1,143 +1,154 @@
-<div align="center">
-  <img src="docs/static/bm-logo-black.png" alt="BitMind Logo" width="120"/>
-  
-  <h1>GAS<br><small>Generative Adversarial Subnet</small></h1>
-  <h3><code>Bittensor SN34</code></h3>
-  <p>
-    <a href="docs/Mining.md">⛏️ Mining</a> ·
-    <a href="docs/Validating.md">🛡️ Validating</a> ·
-    <a href="docs/Incentive.md">💰 Incentives</a> ·
-    <a href="https://app.bitmind.ai/">🏆 Leaderboard</a>
-  </p>
-  <p>
-    🤗 <a href="https://huggingface.co/gasstation">GAS-Station</a> ·
-    <a href="https://www.bitmind.ai/apps">🌐 Apps</a>
-  </p>
-</div>
+# AI-Generated Content Detection
 
-## About GAS
-<div align="center">
-<em>Fake content is evolving fast. Staying ahead demands relentless innovation.</em><br><br>
-</div>
+Multi-modal detection of real vs. AI-generated content across **image**, **video**, and **audio**. This repository contains benchmark tooling, model training code, and evaluation pipelines for binary classifiers that distinguish genuine media from synthetic or AI-manipulated content.
 
-**GAS (Generative Adversarial Subnet)** is a Bittensor subnet inspired by Generative Adversarial Networks (GANs). Detectors and generators compete in a dynamic loop: detectors sharpen their ability to spot synthetic media, while generators push to create more convincing fakes. This adversarial process drives cutting-edge detection tools and continuously generates the training data needed to sustain progress.
+---
 
-Unlike static AI safety solutions, GAS thrives on open, incentivized competition, ensuring detectors evolve as fast as the threats they face.
+## Purpose
 
+The project trains and evaluates detection models that answer: *Is this image, video, or audio real (human-captured) or AI-generated?* Use cases include content authentication, media safety, and research on generalization across diverse generators and datasets.
 
-## Competition Overview
+- **Three modalities**: Separate models for image, video, and audio.
+- **Unified evaluation**: A single benchmark suite (GASBench) runs all models on the same datasets and metrics.
+- **Focus on generalization**: Training and evaluation are designed to perform well on both public datasets and unseen (holdout) data, avoiding dataset memorization.
 
-GAS runs two parallel competition tracks on Bittensor Subnet 34:
+---
 
-| Track | What You Do | How You're Scored |
-|-------|-------------|-------------------|
-| **Discriminative Mining** | Submit AI-generated content detection models (image, video, audio) | `sn34_score` -- geometric mean of MCC and Brier score, measuring both accuracy and calibration |
-| **Generative Mining** | Run a server that generates synthetic media on demand | Base reward for valid content × multiplier for fooling discriminators |
+## How Evaluation Works
 
-**Key facts:**
-- **Three modalities**: Image, video, and audio detection are all scored independently
-- **Cloud-evaluated**: Discriminator models are benchmarked on cloud infrastructure -- no GPU hosting required
-- **Model format**: Safetensors only (ONNX is deprecated)
-- **Datasets refresh weekly** with fresh GAS-Station data alongside static benchmarks
-- **One model per modality per hotkey** for discriminative miners
+### Data split
 
-See [Incentive Mechanism](docs/Incentive.md) for full scoring details.
+- **Public datasets**: Large set of curated datasets (real, synthetic, semisynthetic) from multiple sources (Hugging Face, parquet/zip/tar, multiple generators). Used for training and for public benchmark reporting.
+- **Holdout datasets**: Additional datasets not visible in the public config. Evaluators use them to measure generalization and prevent overfitting to the public set. Holdout names are obfuscated in the benchmark output.
 
+### Metrics
 
-## Quick Start
+Models are scored with a combined metric that rewards both **discrimination** (correct real vs. fake) and **calibration** (reliable probabilities):
 
-### Installation
+- **MCC** (Matthews Correlation Coefficient): Discrimination in [-1, 1], normalized to [0, 1].
+- **Brier score**: Calibration (mean squared error between predicted probabilities and labels); lower is better, random baseline ≈ 0.25.
+- **Combined score** = geometric mean of normalized MCC and normalized Brier, with exponents (e.g. α=1.2, β=1.8) so calibration is weighted strongly. This penalizes overconfident wrong predictions and rewards well-calibrated probabilities.
+
+Additional reported metrics: accuracy, cross-entropy, per-dataset breakdowns, inference time (average and p95).
+
+### Inference and constraints
+
+- Evaluation runs on fixed hardware; models must complete inference within time limits per sample.
+- Inputs: images/videos/audio in standard shapes (e.g. 224×224 or 518×518 for vision); pipeline supplies 0–255 float tensors; models apply normalization internally.
+- Output: logits `[batch, 2]` (real, fake). The pipeline applies softmax for probabilities and computes all metrics.
+
+---
+
+## Tech Stack
+
+### Models
+
+| Modality | Model / approach | Notes |
+|----------|------------------|--------|
+| **Image** | DINOv3 (ViT backbone) | Patch-level or CLS features + classification head; optional LoRA for better generalization. |
+| **Video** | DINOv2 + temporal head (GenD-style) or ReStraV-style | **GenD-style**: DINOv2 ViT-L, LayerNorm-only tuning, temporal transformer + head. **ReStraV-style**: Frozen DINOv2, trajectory geometry (stepwise distances, curvature) → 21-D vector, small MLP only trained. Both output binary logits. |
+| **Audio** | BreathNet | Audio-specific model for real vs. synthetic speech/audio. |
+
+All models are exported as **safetensors** with a small wrapper (`model_config.yaml`, `model.py`, `*.safetensors`) so the same benchmark loader runs image, video, and audio.
+
+### Data preprocessing
+
+- **Image**: Decode to RGB, resize (shortest edge or fixed size), optional center crop; DeeperForensics-style augmentations (JPEG compression, blur, noise, color) at multiple levels during evaluation; no normalization in pipeline (model does /255 and ImageNet mean/std in `forward`).
+- **Video**: Frame extraction (Decord), fixed number of frames and FPS; same resize/crop and augmentation strategy as images; stored as NumPy (e.g. `.npy`) or compressed (`.npy.zst`) with optional local decode cache for fast training.
+- **Audio**: Resampling, fixed-duration windows, optional preprocessed waveforms (e.g. `.pt`); pipeline supports raw bytes or precomputed tensors.
+
+Datasets are defined in YAML (path, modality, media_type, format, sampling). The benchmark downloads and caches data, and supports dataset-balanced and weighted sampling for training.
+
+### Core challenges addressed
+
+1. **Generalization vs. memorization**  
+   Head-only or heavy fine-tuning led to strong train/val accuracy but poor performance on unseen holdout datasets (especially unseen real domains). Mitigations: frozen or lightly tuned backbones (LayerNorm-only or LoRA), geometry-based temporal features (ReStraV), small classifiers, and training across many datasets and generators.
+
+2. **Calibration**  
+   The combined score heavily weights Brier, so overconfident wrong predictions are costly. We use Brier-aware loss (e.g. Focal CE + Brier), learnable temperature/bias (e.g. LogitCalibrator), and optional temperature sweep on a calibration set.
+
+3. **Balance on public benchmarks**  
+   Good performance on both public and (simulated or actual) holdout data is required. We use dataset-balanced sampling, focus on worst-performing datasets, and strict train/val and cross-dataset evaluation to avoid overfitting to a few sources.
+
+---
+
+## Repository layout
+
+| Path | Description |
+|------|-------------|
+| **`external/gasbench`** | Benchmark package: dataset loading, preprocessing, metrics, CLI (`gasbench run`, `gasbench download`, etc.). |
+| **`alternative_models/`** | Training and export code: **dinov2** (video, GenD-style), **restrav** (video, ReStraV-style), and references for image (DINOv3) and audio (BreathNet). |
+| **`docs/`** | Additional documentation (model spec, installation, dataset analysis). |
+
+---
+
+## Quick start
+
+### Install
 
 ```bash
-git clone https://github.com/BitMind-AI/bitmind-subnet.git
+git clone <this-repo>
 cd bitmind-subnet
 ./install.sh
 ```
 
-**Options:**
-- `./install.sh --no-system-deps` - Skip system dependency installation (intended for discriminative miners)
+Optional: `./install.sh --no-system-deps` to skip system dependencies if you only need the benchmark and Python env.
 
-### Using gascli
+### Run benchmarks
+
+Activate the environment and run the benchmark with a model directory (must contain `model_config.yaml`, `model.py`, and `*.safetensors`):
+
 ```bash
-# Activate virtual environment to use gascli
 source .venv/bin/activate
 
-# Show available commands
-gascli --help
+# Image
+gasbench run --image-model ./path/to/image_model/ --debug
 
-# Validators: Start or restart validator services
-gascli validator start
+# Video
+gasbench run --video-model ./path/to/video_model/ --debug
 
-# Miners: Start or restart generative miner
-gascli generator start
+# Audio
+gasbench run --audio-model ./path/to/audio_model/ --debug
 
-# Miners: Push discriminator models (all three modalities at once)
-gascli d push \
-  --image-model image_detector.zip \
-  --video-model video_detector.zip \
-  --audio-model audio_detector.zip \
-  --wallet-name default --wallet-hotkey default
-
-# Or push one model at a time
-gascli d push --image-model image_detector.zip
-gascli d push --video-model video_detector.zip
-gascli d push --audio-model audio_detector.zip
+# Full run (all datasets)
+gasbench run --image-model ./path/to/image_model/ --full
 ```
 
-**Available Aliases:**
-- `validator` → `vali`, `v`
-- `discriminator` → `d`
-- `generator` → `gen`, `g`
+Results are written to the configured results directory (e.g. JSON, parquet, summary).
 
+### Train (example: ReStraV-style video)
 
-### Not using gascli
+From the ReStraV folder, using CSVs and a data root (e.g. mounted cloud storage):
+
 ```bash
-# Validators: Start or restart validator services
-# (Does not require virtualenv activation)
-pm2 start validator.config.js  
-
-# Miners: Start or restart generative miner
-pm2 start gen_miner.config.js
-
-# Miners: Push discriminator models
-source .venv/bin/activate
-python neurons/discriminator/push_model.py \
-  --image-model image_detector.zip \
-  --video-model video_detector.zip \
-  --audio-model audio_detector.zip \
-  --wallet-name default --wallet-hotkey default
+cd alternative_models/restrav
+python train_restrav.py \
+  --train-csv ../dinov2/train.csv \
+  --val-csv ../dinov2/val_eval.csv \
+  --data-root /mnt/your_data \
+  --output-dir checkpoints/restrav \
+  --epochs 10 --batch-size 32
 ```
-For detailed installation and usage instructions, see [Installation Guide](docs/Installation.md).
 
+See `alternative_models/restrav/README.md` and `alternative_models/dinov2/README.md` for full training and export instructions.
 
-## Core Components
+---
 
-> This documentation assumes basic familiarity with [Bittensor concepts](https://docs.bittensor.com/learn/bittensor-building-blocks). 
+## Model format (submission)
 
-#### Discriminative Miners [[docs](docs/Discriminative-Mining.md)]
-Discriminative miners submit detection models for evaluation against a wide variety of real and synthetic media across **image, video, and audio** modalities. Models are evaluated on cloud infrastructure and rewarded based on their accuracy and calibration. This significantly reduces the capital required to mine compared to previous versions that required GPU hosting, and allows the subnet to more reliably identify unique models and reward novel contributions proportionally to their accuracy.
+Each modality’s model is a directory (or zip of that directory) with:
 
-#### Generative Miners [[docs](docs/Generative-Mining.md)]
+- **`model_config.yaml`** — Preprocessing (e.g. `resize: [224, 224]`), `num_classes: 2`, optional `weights_file`.
+- **`model.py`** — Defines `load_model(weights_path, num_classes=2)` returning a `torch.nn.Module`; `forward(x)` returns logits `[B, 2]`.
+- **`*.safetensors`** — Weights loaded by `load_model`.
 
-Generative miners generate synthetic images and videos according to prompts from validators, and are rewarded based on their ability to pass validation checks and fool discriminative miners.
+Inputs from the pipeline are float32 in 0–255; the model must normalize inside `forward`. See `external/gasbench/docs/Safetensors.md` for the full specification and allowed imports.
 
-#### Validators [[docs](docs/Validating.md)]
-Validators are responsible for challenging and scoring both miner types. Generative miners are sent prompts, and their returned synthetic media are validated to mitigate gaming and incentivize high quality results. Discriminative miners are continually evaluated against a mix of data from generative miners, real world data, and data generated locally on the validator.
+---
 
+## References
 
-## Subnet Architecture
-![Subnet Architecture](docs/static/GAS-Architecture-Simple.png)
-
-## Community
-
-<p align="left">
-  <a href="https://discord.gg/kKQR98CrUn">
-    <img src="docs/static/Join-BitMind-Discord.png" alt="Join us on Discord" width="60%">
-  </a>
-</p> 
-
-## Contributing
-
-Contributions are welcome and can be made via a pull request to the `testnet` branch.
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/BitMind-AI/bitmind-subnet)
+- **ReStraV-style video**: Frozen backbone + trajectory geometry (stepwise distances, curvature) + MLP — see `alternative_models/restrav/`.
+- **GenD-style video**: LayerNorm-only tuning of DINOv2 + temporal transformer — see `alternative_models/dinov2/`.
+- **Evaluation and datasets**: `external/gasbench/`, `external/gasbench/docs/IMAGE_DATASETS_V11_V12_ANALYSIS.md`.
+- **Multi-modal summary**: `alternative_models/RESUME_TECH_SUMMARY.md`.
