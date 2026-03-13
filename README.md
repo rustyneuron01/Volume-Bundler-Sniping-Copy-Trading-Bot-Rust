@@ -93,7 +93,7 @@ Datasets are defined in YAML (path, modality, media_type, format, sampling). The
 
 ```bash
 git clone <this-repo>
-cd bitmind-subnet
+cd detection-tool
 ./install.sh
 ```
 
